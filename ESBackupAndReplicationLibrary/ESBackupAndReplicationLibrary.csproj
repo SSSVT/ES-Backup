@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <AssemblyName>ESBackupAndReplication</AssemblyName>
+    <RootNamespace>ESBackupAndReplication</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
