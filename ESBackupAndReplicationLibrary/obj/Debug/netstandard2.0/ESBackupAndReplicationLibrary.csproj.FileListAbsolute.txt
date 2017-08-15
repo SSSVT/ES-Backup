@@ -1,0 +1,11 @@
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\bin\Debug\netstandard2.0\ESBackupAndReplicationLibrary.deps.json
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\bin\Debug\netstandard2.0\ESBackupAndReplicationLibrary.dll
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.csprojResolveAssemblyReference.cache
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.csproj.CoreCompileInputs.cache
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.AssemblyInfoInputs.cache
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.AssemblyInfo.cs
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\bin\Debug\netstandard2.0\ESBackupAndReplicationLibrary.pdb
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.Properties.Resources.resources
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.csproj.GenerateResource.Cache
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.dll
+C:\Users\fanda\Documents\MyProjects\ES-Backup\ESBackupAndReplicationLibrary\obj\Debug\netstandard2.0\ESBackupAndReplicationLibrary.pdb
