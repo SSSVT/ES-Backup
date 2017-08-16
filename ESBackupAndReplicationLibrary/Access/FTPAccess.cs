@@ -49,9 +49,9 @@ namespace ESBackupAndReplication.Access
 
             this._Client = new FtpClient()
             {
+                Host = this.Authentication.Address,
                 Credentials = new NetworkCredential(this.Authentication.Username, this.Authentication.Password),
             };
-
 
             try
             {
@@ -91,7 +91,15 @@ namespace ESBackupAndReplication.Access
             if(this.FileExists(path))
                 throw new NotDirectoryException();
 
-            this._Client.CreateDirectory(path);
+            try
+            {
+                this._Client.CreateDirectory(path);
+            }
+            catch(FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
         }
 
         public override void DeleteDirectory(string path)
@@ -105,8 +113,16 @@ namespace ESBackupAndReplication.Access
             if (!this.DirectoryExists(path))
                 throw new DirectoryNotFoundException(path);
 
-            this.EnsureDirectoryEmpty(path);
-            this._Client.DeleteDirectory(path);
+            try
+            { 
+                this.EnsureDirectoryEmpty(path);
+                this._Client.DeleteDirectory(path);
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
         }
 
         public override void CreateFile(string path)
@@ -117,7 +133,7 @@ namespace ESBackupAndReplication.Access
             if(this.FileExists(path))
                 throw new FileAlreadyExistsException();
 
-            //TODO: fix
+            WriteToFile(path, "");
         }
 
         public override void DeleteFile(string path)
@@ -128,7 +144,15 @@ namespace ESBackupAndReplication.Access
             if(!this.FileExists(path))
                 throw new FileNotFoundException();
 
-            this._Client.DeleteFile(path);
+            try
+            { 
+                this._Client.DeleteFile(path);
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
         }
 
         public override string ReadFile(string path)
@@ -139,22 +163,29 @@ namespace ESBackupAndReplication.Access
             if(!this.FileExists(path))
                 throw new FileNotFoundException();
 
-            using (var stream = this._Client.OpenRead(path))
+            try
             {
-                using (var reader = new IO.StreamReader(stream))
+                using (var stream = this._Client.OpenRead(path))
                 {
-                    return reader.ReadToEnd();
+                    using (var reader = new IO.StreamReader(stream))
+                    {
+                        return reader.ReadToEnd();
+                    }
                 }
             }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
+
+            return null;
         }
 
         public override void WriteToFile(string path, string text)
         {
             if (!this.Connected)
                 throw new NotConnectedException();
-
-            if(!this.FileExists(path))
-                throw new FileAlreadyExistsException();
 
             AppendToFile(path, text);
         }
@@ -164,12 +195,23 @@ namespace ESBackupAndReplication.Access
             if (!this.Connected)
                 throw new NotConnectedException();
 
-            using (var stream = this._Client.OpenWrite(path))
+            if (!DirectoryExists(PathHelper.GetParent(path)))
+                throw new DirectoryNotFoundException();
+
+            try
             {
-                using (var writer = new IO.StreamWriter(stream))
+                using (var stream = this._Client.OpenAppend(path, FtpDataType.ASCII, false))
                 {
-                    writer.Write(text);
+                    using (var writer = new IO.StreamWriter(stream))
+                    {
+                        writer.Write(text);
+                    }
                 }
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
             }
         }
 
@@ -180,13 +222,24 @@ namespace ESBackupAndReplication.Access
 
             this.EnsureDirectoryExists(IO.Path.GetDirectoryName(destination));
 
+            if (!IO.File.Exists(source))
+                throw new FileNotFoundException();
+
             if (!overwrite && this.FileExists(destination))
                 throw new FileAlreadyExistsException(destination);
 
             //TODO: check errors
-            var exists = overwrite ? FtpExists.Overwrite : FtpExists.Skip;
+            try
+            { 
+                var exists = overwrite ? FtpExists.Overwrite : FtpExists.Skip;
 
-            this._Client.UploadFile(destination, source, exists);
+                this._Client.UploadFile(source, destination, exists);
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
         }
 
         public override void RestoreFile(string source, string destination, bool overwrite = false)
@@ -196,11 +249,22 @@ namespace ESBackupAndReplication.Access
 
             IO.Directory.CreateDirectory(IO.Path.GetDirectoryName(destination));
 
+            if (!FileExists(source))
+                throw new FileNotFoundException();
+
             if (!overwrite && IO.File.Exists(destination))
                 throw new FileAlreadyExistsException(destination);
 
             //TODO: check errors
-            this._Client.DownloadFile(source, destination, overwrite);
+            try
+            {
+                this._Client.DownloadFile(destination, source, overwrite);
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
         }
 
         public override Directory ListDirectory(string path)
@@ -213,27 +277,37 @@ namespace ESBackupAndReplication.Access
             List<string> directories = new List<string>();
             List<FileHistory> files = new List<FileHistory>();
 
-            foreach (var item in this._Client.GetListing(path))
+            try
             {
-                string itemPath = PathHelper.CorrectDirectorySeparators(item.FullName);
-
-                switch (item.Type)
+                foreach (var item in this._Client.GetListing(path))
                 {
-                    case FtpFileSystemObjectType.Directory:
-                        directories.Add(itemPath);
-                        break;
-                    case FtpFileSystemObjectType.File:
-                        files.Add(new FileHistory()
-                        {
-                            Path = itemPath,
-                            Root = path,
-                            TimeStamp = item.Modified
-                        });
-                        break;
+                    string itemPath = PathHelper.CorrectDirectorySeparators(item.FullName);
+
+                    switch (item.Type)
+                    {
+                        case FtpFileSystemObjectType.Directory:
+                            directories.Add(itemPath);
+                            break;
+                        case FtpFileSystemObjectType.File:
+                            files.Add(new FileHistory()
+                            {
+                                Path = itemPath,
+                                Root = path,
+                                TimeStamp = item.Modified
+                            });
+                            break;
+                    }
                 }
+
+                return new Directory(path, directories, files);
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
             }
 
-            return new Directory(path, directories, files);
+            return null;
         }
 
         public override bool DirectoryExists(string path)
@@ -241,7 +315,17 @@ namespace ESBackupAndReplication.Access
             if (!this.Connected)
                 throw new NotConnectedException();
 
-            return this._Client.DirectoryExists(path);
+            try
+            { 
+                return this._Client.DirectoryExists(path);
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
+
+            return false;
         }
 
         public override bool FileExists(string path)
@@ -249,7 +333,17 @@ namespace ESBackupAndReplication.Access
             if (!this.Connected)
                 throw new NotConnectedException();
 
-            return this._Client.FileExists(path);
+            try
+            {
+                return this._Client.FileExists(path);
+            }
+            catch (FtpCommandException e)
+            {
+                if (e.CompletionCode == "550")
+                    throw new PermissionsException();
+            }
+
+            return false;
         }
         #endregion
     }

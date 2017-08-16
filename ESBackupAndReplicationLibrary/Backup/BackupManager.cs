@@ -4,11 +4,10 @@ using ESBackupAndReplication.FileManagers;
 using ESBackupAndReplication.FileManagers.Interfaces;
 using ESBackupAndReplication.Helpers;
 using ESBackupAndReplication.Objects;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
+using ESBackupAndReplicationLibrary.Properties;
 
 namespace ESBackupAndReplication.Backup
 {
@@ -29,8 +28,8 @@ namespace ESBackupAndReplication.Backup
         internal IFileManager Files { get; }
         internal IFileManager CompressedFiles { get; }
 
-        protected string LogFile { get; } = Properties.Settings.Default.DeletedFilesInfo;
-        protected string Structure { get; } = Properties.Settings.Default.FileStructureInfo;
+        protected string LogFile { get; } = Resources.DeletedFilesInfo;
+        protected string Structure { get; } = Resources.FileStructureInfo;
 
         protected List<FileHistory> _SourceFiles { get; set; }
         protected List<FileHistory> _BackupFiles { get; set; }

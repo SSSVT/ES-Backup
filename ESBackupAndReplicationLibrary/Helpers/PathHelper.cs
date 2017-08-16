@@ -26,6 +26,15 @@ namespace ESBackupAndReplication.Helpers
             return relative;
         }
 
+        public static string GetParent(string path)
+        {
+            path = CorrectDirectorySeparators(path);
+
+            int index = path.LastIndexOf('/');
+
+            return path.Substring(0, index);
+        }
+
         public static string CorrectDirectorySeparators(string path, char directorySeparatorChar = '/')
         {
             foreach (char separator in DirectorySeparators)

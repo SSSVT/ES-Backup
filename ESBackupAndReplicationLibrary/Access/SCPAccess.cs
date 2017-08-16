@@ -113,7 +113,23 @@ namespace ESBackupAndReplication.Access
             if (!this.Connected)
                 throw new NotConnectedException();
 
-            this.ExecuteCommand($"touch { this.CorrectPath(path) }");
+            if (!this.DirectoryExists(PathHelper.GetParent(path)))
+                throw new DirectoryNotFoundException();
+
+            if (this.FileExists(path))
+                throw new FileAlreadyExistsException();
+
+            if (this.DirectoryExists(path))
+                throw new NotFileException();
+
+            try
+            {
+                this.ExecuteCommand($"touch { this.CorrectPath(path) }");
+            }
+            catch(UnknownException)
+            {
+                this.ExecuteCommand($"printf \"\" > { this.CorrectPath(path) }");
+            }
         }
 
         public override void DeleteFile(string path)
@@ -138,7 +154,7 @@ namespace ESBackupAndReplication.Access
             if (!this.Connected)
                 throw new NotConnectedException();
 
-            this.ExecuteCommand($"echo { text } > { this.CorrectPath(path) }");
+            this.ExecuteCommand($"printf { text } > { this.CorrectPath(path) }");
         }
 
         public override void AppendToFile(string path, string text)
@@ -146,7 +162,7 @@ namespace ESBackupAndReplication.Access
             if (!this.Connected)
                 throw new NotConnectedException();
 
-            this.ExecuteCommand($"echo { text } >> { this.CorrectPath(path) }");
+            this.ExecuteCommand($"printf { text } >> { this.CorrectPath(path) }");
         }
 
         public override void CopyFile(string source, string destination, bool overwrite)
@@ -222,7 +238,7 @@ namespace ESBackupAndReplication.Access
                 SshCommand cmd = this.ExecuteCommand($"cd { this.CorrectPath(path, true) }");
                 this._SshClient.RunCommand($"cd -");
 
-                return true;
+                return cmd.ExitStatus != -1;
             }
             catch (Exception ex) 
                 when (ex is NotDirectoryException ||
@@ -269,22 +285,27 @@ namespace ESBackupAndReplication.Access
 
         protected void CheckExceptions(SshCommand command)
         {
-            if (command.Error == "" || command.Error == null)
-                return;
-            string error = command.Error.ToLower();
+            bool isError = true;
+            string error = command.Error?.ToLower();
+            if (error == "" || error == null)
+            {
+                error = command.Result;
+                isError = false;
+            }
             
-            if (Regex.IsMatch(error, "permission(s)? den(y|ied)?"))
+            if (Regex.IsMatch(error, "permission(s)? den(y|ied)?", RegexOptions.IgnoreCase))
                 throw new PermissionsException(command.CommandText + ": " + command.Error);
-            if (Regex.IsMatch(error, "(file (path )?does not exist|file not found|no such file)"))
+            if (Regex.IsMatch(error, "(file (path )?does not exist|file not found|no such file)", RegexOptions.IgnoreCase))
                 throw new FileNotFoundException(command.CommandText + ": " + command.Error);
-            if (Regex.IsMatch(error, "((directory|folder) not found|can't cd to)"))
+            if (Regex.IsMatch(error, "((directory|folder) not found|can't cd to)", RegexOptions.IgnoreCase))
                 throw new DirectoryNotFoundException(command.CommandText + ": " + command.Error);
-            if (Regex.IsMatch(error, "not a directory"))
+            if (Regex.IsMatch(error, "not a directory", RegexOptions.IgnoreCase))
                 throw new NotDirectoryException(command.CommandText + ": " + command.Error);
-            if (Regex.IsMatch(error, "is a directory"))
+            if (Regex.IsMatch(error, "is a directory", RegexOptions.IgnoreCase))
                 throw new NotFileException(command.CommandText + ": " + command.Error);
 
-            throw new UnknownException(command.CommandText + ": " + command.Error);
+            if(isError)
+                throw new UnknownException(command.CommandText + ": " + command.Error);
         }
 
         protected Directory ListDirectoryUniversal(string basePath, string lsLong, string lsShort)
@@ -306,7 +327,11 @@ namespace ESBackupAndReplication.Access
                 string dateTime = string.Join(" ", temp.Skip(4).Take(3));
                 string path = IO.Path.Combine(basePath, shortSplitted[ind]);
                 if (dir)
+                {
                     directories.Add(path);
+                    ind++;
+                    continue;
+                }
 
                 DateTime date = this.ParseDateTime(dateTime);
 

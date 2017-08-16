@@ -52,11 +52,7 @@ namespace ESBackupAndReplication.Access
 
             try
             {
-                IO.File.Create(path);
-            }
-            catch (IO.FileNotFoundException ex)
-            {
-                throw new FileNotFoundException(path, ex);
+                IO.File.Create(path).Close();
             }
             catch (IO.DirectoryNotFoundException ex)
             {
