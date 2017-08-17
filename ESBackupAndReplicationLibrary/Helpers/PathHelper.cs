@@ -30,7 +30,11 @@ namespace ESBackupAndReplication.Helpers
         {
             path = CorrectDirectorySeparators(path);
 
-            int index = path.LastIndexOf('/');
+            int index;
+            while((index = path.LastIndexOf('/')) == path.Length - 1)
+            {
+                path = path.Substring(0, index);
+            }
 
             return path.Substring(0, index);
         }

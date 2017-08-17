@@ -23,13 +23,13 @@ namespace ESBackupAndReplicationLibrary.Test.Access
         private IAccess access;
 
         [SetUp]
-        public void Prepare_Local()
+        public void PrepareLocal()
         {
             AccessTestHelper.PrepareLocalFiles();
         }
 
         [TearDown]
-        public void Remove_Local()
+        public void RemoveLocal()
         {
             AccessTestHelper.RemoveLocalFiles();
             try
@@ -46,7 +46,7 @@ namespace ESBackupAndReplicationLibrary.Test.Access
         }
 
         [Test]
-        public void Local_Access_Test()
+        public void LocalAccess_Test()
         {
             access = new LocalAccess();
             var testHelper = new AccessTestHelper(access);
@@ -55,7 +55,7 @@ namespace ESBackupAndReplicationLibrary.Test.Access
         }
 
         [Test]
-        public void Ftp_Access_Test()
+        public void FtpAccess_Test()
         {
             access = new FTPAccess(authentication);
             ((IRemoteAccess)access).Connect();
@@ -66,7 +66,7 @@ namespace ESBackupAndReplicationLibrary.Test.Access
         }
 
         [Test]
-        public void Sftp_Access_Test()
+        public void SftpAccess_Test()
         {
             access = new SFTPAccess(authentication);
             ((IRemoteAccess)access).Connect();
@@ -77,7 +77,7 @@ namespace ESBackupAndReplicationLibrary.Test.Access
         }
 
         [Test]
-        public void Scp_Access_Test()
+        public void ScpAccess_Test()
         {
             access = new SCPAccess(authentication);
             ((IRemoteAccess)access).Connect();
